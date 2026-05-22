@@ -1,9 +1,10 @@
 import { Dumbbell } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "../ui/Button"
+import { useAuth } from "../../context/useAuth";
 
 function Navbar() {
-  const user = false;
+  const { user } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">

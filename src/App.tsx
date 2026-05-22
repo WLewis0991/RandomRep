@@ -5,10 +5,12 @@ import Auth from "./pages/Auth";
 import Account from "./pages/Account";
 import Profile from "./pages/Profile";
 import Navbar from "./components/layout/Navbar";
+import AuthProvider from "./context/AuthProvider";
 
 function App() {
   return (
     <>
+    <AuthProvider>
       <BrowserRouter>
         <div className="min-h-screen flex flex-col">
           <Navbar />
@@ -23,6 +25,7 @@ function App() {
           </main>
         </div>
       </BrowserRouter>
+    </AuthProvider>
     </>
   );
 }
