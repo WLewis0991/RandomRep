@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { Button } from "../ui/Button"
 
 function Navbar() {
+  const user = false;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -13,12 +14,20 @@ function Navbar() {
         </Link>
 
         <nav>
-         <Link to="/auth/sign-in">
-          <Button variant="ghost" size="sm">Sign In</Button>
-         </Link>
+          {user ? 
+          (<Link to="/auth/sign-in">
+            <Button size="sm">My Plan</Button>
+          </Link>
+          ):(
+          <>
+          <Link to="/auth/sign-in">
+            <Button variant="ghost" size="sm">Sign In</Button>
+          </Link>
           <Link to="/auth/sign-up">
-          <Button size="sm">Sign Up</Button>
-         </Link>
+            <Button size="sm">Sign Up</Button>
+          </Link>
+          </>
+          )}
         </nav>
       </div>
     </header>
