@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Card } from "../components/ui/Card";
 import { Select } from "../components/ui/Select";
 import { Textarea } from "../components/ui/Textarea";
+import { Button } from "../components/ui/Button";
+import { ArrowRight } from "lucide-react";
 
 
 const goalOptions = [
@@ -69,6 +71,10 @@ function Onboarding() {
     return <RedirectToSignIn />;
   }
 
+  function handleFormSubmit() {
+
+  }
+
   return (
     <SignedIn>
       <div className="min-h-screen pt-24 pb-12 px-6">
@@ -79,7 +85,7 @@ function Onboarding() {
           <Card variant="bordered">
             <h1 className="text-2xl font-bold mb-2">Tell Us About Yourself</h1>
             <p className="text-muted mb-6">Lets create the perfect pln for you.</p>
-            <form className="space-y-5">
+            <form onSubmit={handleFormSubmit} className="space-y-5">
               <Select id="goal" label="Whats your primary goal?" options={goalOptions} value={formData.goal} onChange={(e) => updateForm("goal", e.target.value)}/>
               <Select id="experience" label="Training experience" options={experienceOptions} value={formData.experience} onChange={(e) => updateForm("experience", e.target.value)}/>
               <div className="grid grid-cols-2 space-x-5">
@@ -89,7 +95,11 @@ function Onboarding() {
               <Select id="equipment" label="Equipment access" options={equipmentOptions} value={formData.equipment} onChange={(e) => updateForm("equipment", e.target.value)}/>
               <Select id="preferredSplit" label="Preferred training split" options={splitOptions} value={formData.prefferedSplit} onChange={(e) => updateForm("preferredSplit", e.target.value)}/> 
               <Textarea id="injures" label="Any injuries nad limitations? (optional)" rows={3} value={formData.injuries} onChange={(e) => updateForm("injureies", e.target.value)} />
-            
+              <div className="flex gap-3 pt-2">
+                <Button type="submit" className="flex-1 gap-2">
+                  Generate My Plan <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
             </form>
           </Card>
           
