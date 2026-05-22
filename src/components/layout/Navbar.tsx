@@ -2,6 +2,7 @@ import { Dumbbell } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "../ui/Button"
 import { useAuth } from "../../context/useAuth";
+import { UserButton } from "@neondatabase/auth/react";
 
 function Navbar() {
   const { user } = useAuth();
@@ -16,9 +17,11 @@ function Navbar() {
 
         <nav>
           {user ? 
-          (<Link to="/auth/sign-in">
-            <Button size="sm">My Plan</Button>
+          (
+          <><Link to="/auth/sign-in">
+            <Button variant="ghost" size="sm">My Plan</Button>
           </Link>
+          <UserButton className="bg-accent"/></>
           ):(
           <>
           <Link to="/auth/sign-in">
