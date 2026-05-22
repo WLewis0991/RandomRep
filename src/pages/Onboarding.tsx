@@ -1,5 +1,10 @@
 import { RedirectToSignIn, SignedIn } from "@neondatabase/auth/react";
 import { useAuth } from "../context/useAuth";
+import { useState } from "react";
+import { Card } from "../components/ui/Card";
+import { Select } from "../components/ui/Select";
+import { Textarea } from "../components/ui/Textarea";
+
 
 const goalOptions = [
   { value: "bulk", label: "Build Muscle (Bulk)"},
@@ -45,6 +50,20 @@ const splitOptions = [
 
 function Onboarding() {
   const{user} = useAuth();
+  const [formData, setFormData] = useState({
+    goal:"bulk",
+    experience:"intermediate",
+    daysPerWeek:"4",
+    sessionLength:"60",
+    equipment:"full_gym",
+    injuries:"",
+    prefferedSplit: "upper_lower",
+
+  });
+
+  function updateForm(field: string, value: string) {
+    setFormData((prev) => ({...prev, [field]: value }));
+  }
 
   if (!user) {
     return <RedirectToSignIn />;
@@ -57,6 +76,23 @@ function Onboarding() {
           {/* Progress Indicator */ } 
 
           { /* Step 1: Questions */ }
+          <Card variant="bordered">
+            <h1 className="text-2xl font-bold mb-2">Tell Us About Yourself</h1>
+            <p className="text-muted mb-6">Lets create the perfect pln for you.</p>
+            <form className="space-y-5">
+              <Select id="goal" label="Whats your primary goal?" options={goalOptions} value={formData.goal} onChange={(e) => updateForm("goal", e.target.value)}/>
+              <Select id="experience" label="Training experience" options={experienceOptions} value={formData.experience} onChange={(e) => updateForm("experience", e.target.value)}/>
+              <div className="grid grid-cols-2 space-x-5">
+                <Select id="daysPerWeek" label="Days per week" options={daysOptions} value={formData.daysPerWeek} onChange={(e) => updateForm("daysPerWeek", e.target.value)}/>
+                <Select id="sessionLength" label="Session length" options={sessionLength} value={formData.sessionLength} onChange={(e) => updateForm("sessionLength", e.target.value)}/>
+              </div> 
+              <Select id="equipment" label="Equipment access" options={equipmentOptions} value={formData.equipment} onChange={(e) => updateForm("equipment", e.target.value)}/>
+              <Select id="preferredSplit" label="Preferred training split" options={splitOptions} value={formData.prefferedSplit} onChange={(e) => updateForm("preferredSplit", e.target.value)}/> 
+              <Textarea id="injures" label="Any injuries nad limitations? (optional)" rows={3} value={formData.injuries} onChange={(e) => updateForm("injureies", e.target.value)} />
+            
+            </form>
+          </Card>
+          
 
           { /* Step 2: AI Generation */ }
         </div>
