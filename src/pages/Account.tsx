@@ -1,10 +1,9 @@
-
 function Account() {
   return (
     <div>
       <p>Account</p>
     </div>
-  )
+  );
 }
 
-export default Account
+export default Account;
