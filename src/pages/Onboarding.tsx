@@ -1,11 +1,12 @@
 import { RedirectToSignIn, SignedIn } from "@neondatabase/auth/react";
-import { useAuth } from "../context/useAuth";
 import { useState } from "react";
 import { Card } from "../components/ui/Card";
 import { Select } from "../components/ui/Select";
 import { Textarea } from "../components/ui/Textarea";
 import { Button } from "../components/ui/Button";
 import { ArrowRight } from "lucide-react";
+import type { UserProfile } from "../types/types";
+import { useAuth } from "../context/useAuth";
 
 
 const goalOptions = [
@@ -51,7 +52,7 @@ const splitOptions = [
 ];
 
 function Onboarding() {
-  const{user} = useAuth();
+  const{user, saveProfile} = useAuth();
   const [formData, setFormData] = useState({
     goal:"bulk",
     experience:"intermediate",
@@ -59,7 +60,7 @@ function Onboarding() {
     sessionLength:"60",
     equipment:"full_gym",
     injuries:"",
-    prefferedSplit: "upper_lower",
+    preferredSplit: "upper_lower",
 
   });
 
@@ -73,6 +74,18 @@ function Onboarding() {
 
   async function handleFormSubmit(e: React.SubmitEvent) {
     e.preventDefault();
+
+      const profile: Omit<UserProfile, "userId" | "updatedAt"> = {
+      goal: formData.goal as UserProfile["goal"],
+      experience: formData.experience as UserProfile["experience"],
+      daysPerWeek: parseInt(formData.daysPerWeek),
+      sessionLength: parseInt(formData.sessionLength),
+      equipment: formData.equipment as UserProfile["equipment"],
+      injuries: formData.injuries || undefined,
+      preferredSplit: formData.preferredSplit as UserProfile["preferredSplit"],
+    };
+
+  await saveProfile(profile)
 
   }
 
@@ -94,8 +107,8 @@ function Onboarding() {
                 <Select id="sessionLength" label="Session length" options={sessionLength} value={formData.sessionLength} onChange={(e) => updateForm("sessionLength", e.target.value)}/>
               </div> 
               <Select id="equipment" label="Equipment access" options={equipmentOptions} value={formData.equipment} onChange={(e) => updateForm("equipment", e.target.value)}/>
-              <Select id="preferredSplit" label="Preferred training split" options={splitOptions} value={formData.prefferedSplit} onChange={(e) => updateForm("preferredSplit", e.target.value)}/> 
-              <Textarea id="injures" label="Any injuries nad limitations? (optional)" rows={3} value={formData.injuries} onChange={(e) => updateForm("injureies", e.target.value)} />
+              <Select id="preferredSplit" label="Preferred training split" options={splitOptions} value={formData.preferredSplit} onChange={(e) => updateForm("preferredSplit", e.target.value)}/> 
+              <Textarea id="injuries" label="Any injuries or limitations? (optional)" rows={3} value={formData.injuries} onChange={(e) => updateForm("injuries", e.target.value)} />
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1 gap-2">
                   Generate My Plan <ArrowRight className="w-4 h-4" />
