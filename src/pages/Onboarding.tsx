@@ -71,7 +71,8 @@ function Onboarding() {
     return <RedirectToSignIn />;
   }
 
-  function handleFormSubmit() {
+  async function handleFormSubmit(e: React.SubmitEvent) {
+    e.preventDefault();
 
   }
 
