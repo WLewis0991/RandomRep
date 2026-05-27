@@ -16,10 +16,10 @@ export async function generteTrainingPlan(profile: UserProfile | Record <string,
         preferred_split: profile.preferred_split || "upper_lower",
     };
 
-    const apiKey = process.env.OPEN_ROUTER_KEY;
+    const apiKey = process.env.OPENROUTER_KEY;
 
     if(!apiKey) {
-        throw new Error("OPEN_ROUTER_KEY is not set in env");
+        throw new Error("OPENROUTER_KEY is not set in env");
     }
 
     const openai = new OpenAI ({
@@ -33,6 +33,15 @@ export async function generteTrainingPlan(profile: UserProfile | Record <string,
 
     //Build prompt for AI
     const prompt = buildPrompt(normalizedProfile);
+
+    try{
+        const completion = await openai.chat.completions.create({
+            model: "nvidia/nemotron-3-super-120b-a12b:free"
+        })
+    }catch (error) {
+        console.error("[AI] Error generating plan:", error);
+        throw error;
+    }
 }
 
 //Prompt for AI 
