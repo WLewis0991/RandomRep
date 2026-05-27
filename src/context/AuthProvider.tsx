@@ -1,16 +1,9 @@
-import { useState, createContext, type ReactNode, useEffect } from "react";
+import { useState,  type ReactNode, useEffect } from "react";
 import type { User,  } from "@neondatabase/auth/types";
 import { authClient } from "../lib/auth";
 import type { UserProfile } from "../types/types";
 import { api } from "../lib/api";
-
-interface AuthContextType {
-    user: User | null;
-    isLoading: boolean;
-    saveProfile: (profile: Omit<UserProfile, 'userId' | 'updatedAt'>) => Promise <void>
-}
-
-export const AuthContext = createContext<AuthContextType | null>(null);
+import { AuthContext } from "./authContext";
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -26,7 +19,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
                 } else {
                     setUser(null);
                 }
-            } catch (err) {
+            } catch {
                 setUser(null);
             } finally {
                 setIsLoading(false);
