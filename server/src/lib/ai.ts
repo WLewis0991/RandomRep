@@ -4,7 +4,7 @@ import type { TrainingPlan, UserProfile } from "../types/serverTypes";
 
 dotenv.config();
 
-export async function generteTrainingPlan(profile: UserProfile | Record <string, any>,) : Promise<TrainingPlan> {
+export async function generteTrainingPlan(profile: UserProfile | Record <string, any>,) : Promise<Omit<TrainingPlan , "id" | "userId" | "createdAt" | "version">> {
 
     const normalizedProfile: UserProfile = {
         goal: profile.goal || "bulk",
@@ -36,12 +36,61 @@ export async function generteTrainingPlan(profile: UserProfile | Record <string,
 
     try{
         const completion = await openai.chat.completions.create({
-            model: "nvidia/nemotron-3-super-120b-a12b:free"
-        })
-    }catch (error) {
-        console.error("[AI] Error generating plan:", error);
-        throw error;
+            model: process.env.OPENROUTER_MODEL || "nvidia/nemotron-3-super-120b-a12b:free",
+            //Give AI a persona to dial in reponses
+            messages: [{
+                role: "system",
+                content: "You are and expert fitness trainer and program designer. You must respond with valid JSON only. Do not include any markdown, reasoning, or additional text"
+            },
+            {
+                role: "user",
+                content: prompt,
+            }],
+            //Temp = response accuracy. 0-2. 0 = super accurate, 2 = more random
+            temperature: 0.7,
+            response_format: {type: "json_object"}
+        });
+
+        const content = completion.choices[0].message.content;
+
+        if (!content) {console.error("[AI] No content in response", JSON.stringify(completion, null, 2),
+
+        ); throw new Error ("No content in AI reponse")
+        }
+            const planData = JSON.parse(content)
+
+            return formatPlanResponse(planData, normalizedProfile);
+
+        }catch (error) {
+            console.error("[AI] Error generating plan:", error);
+            throw error;
     }
+}
+
+// Format AI response into TrainingPlan structure, also setting defaults for missing fields to make sure there is atleast a response.
+function formatPlanResponse(aiResponse: any, profile: UserProfile): Omit<TrainingPlan , "id" | "userId" | "createdAt" | "version"> {
+    const plan: Omit<TrainingPlan , "id" | "userId" | "createdAt" | "version">  = {
+        overview: {goal: aiResponse.overview?.goal || `Customized ${profile.goal} program`,
+        frequency: aiResponse.overview?.frequency || `${profile.days_per_week} days per week`,
+        split: aiResponse.overview?.split || profile.preferred_split,
+        notes: aiResponse.overview?.notes || "This program is designed to help you achieve your fitness goals based on your profile."
+    },
+        weeklySchedule: (aiResponse.weeklySchedule || []).map((day: any) => ({
+            day: day.day || "Day",
+            focus: day.focus || "General",
+            exercises: (day.exercises || []).map((ex: any) => ({
+                name: ex.name || "Exercise",
+                sets: ex.sets || 3,
+                reps: ex.reps || "8-12",
+                rest: ex.rest || "60-90 sec",
+                rpe: ex.rpe || 7,
+                notes: ex.notes || "",
+                alternatives: ex.alternatives || []
+            }))
+        })),
+        progression: aiResponse.progression || "Progression strategy will be implemented based on your performance and goals.",
+    };
+    return plan;
 }
 
 //Prompt for AI 
