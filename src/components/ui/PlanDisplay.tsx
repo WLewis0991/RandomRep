@@ -10,16 +10,16 @@ function ExerciseRow({
   index: number;
 }) {
   return (
-    <tr className="border-b border-[var(--color-border)] last:border-0">
+    <tr className="border-b border-border last:border-0">
       <td className="py-3 pr-4">
         <div className="flex items-start gap-3">
-          <span className="text-xs text-[var(--color-muted)] w-5">
+          <span className="text-xs text-muted w-5">
             {index + 1}.
           </span>
           <div>
             <p className="font-medium">{exercise.name}</p>
             {exercise.notes && (
-              <p className="text-xs text-[var(--color-muted)] mt-0.5 flex items-center gap-1">
+              <p className="text-xs text-muted mt-0.5 flex items-center gap-1">
                 <Info className="w-3 h-3" />
                 {exercise.notes}
               </p>
@@ -29,15 +29,15 @@ function ExerciseRow({
       </td>
 
       <td className="py-3 px-4 text-center whitespace-nowrap">
-        <span className="text-[var(--color-accent)] font-medium">
+        <span className="text-accent font-medium">
           {exercise.sets}
         </span>
-        <span className="text-[var(--color-muted)]"> x </span>
+        <span className="text-muted"> x </span>
         <span>{exercise.reps}</span>
       </td>
 
       <td className="py-3 px-4 text-center">
-        <span className="text-[var(--color-muted)]">{exercise.rest}</span>
+        <span className="text-muted">{exercise.rest}</span>
       </td>
       <td className="py-3 px-4 text-center">
         <span
@@ -63,9 +63,9 @@ function DayCard({ schedule }: { schedule: DaySchedule }) {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="font-semibold text-lg">{schedule.day}</h3>
-          <p className="text-sm text-[var(--color-accent)]">{schedule.focus}</p>
+          <p className="text-sm text-accent">{schedule.focus}</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-[var(--color-muted)]">
+        <div className="flex items-center gap-2 text-sm text-muted">
           <Dumbbell className="w-4 h-4" />
           <span>{schedule.exercises.length} exercises</span>
         </div>
@@ -74,7 +74,7 @@ function DayCard({ schedule }: { schedule: DaySchedule }) {
       <div className="overflow-x-auto -mx-6 px-6">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[var(--color-muted)] text-xs uppercase tracking-wider">
+            <tr className="text-muted text-xs uppercase tracking-wider">
               <th className="text-left py-2 pr-4 font-medium">Excercise</th>
               <th className="py-2 px-4 font-medium">Sets x Reps</th>
               <th className="py-2 px-4 font-medium">Rest</th>
