@@ -51,7 +51,7 @@ export default function Home() {
       <section className="relative pt-32 pb-20 px-6 overflow-hidden">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-linear-to-b from-accent/5 via-transparent to-transparent" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-200 h-200 bg-accent/10 rounded-full blur-3xl" />
 
         <div className="relative max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-8">
