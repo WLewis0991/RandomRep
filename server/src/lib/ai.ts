@@ -36,7 +36,7 @@ export async function generteTrainingPlan(profile: UserProfile | Record <string,
 
     try{
         const completion = await openai.chat.completions.create({
-            model: "openai/gpt-oss-20b:free",  
+            model: "google/gemma-4-31b-it:free",
             //Give AI a persona to dial in reponses
             messages: [{
                 role: "system",
