@@ -4,7 +4,15 @@ import type { TrainingPlan, UserProfile } from "../types/serverTypes";
 
 dotenv.config();
 
-export async function generteTrainingPlan(profile: UserProfile | Record <string, any>,) : Promise<Omit<TrainingPlan , "id" | "userId" | "createdAt" | "version">> {
+const FREE_MODELS = [
+    "deepseek/deepseek-v4-flash:free",
+    "deepseek/deepseek-r1:free",
+    "meta-llama/llama-3.3-70b:free",
+    "openai/gpt-oss-20b:free",
+    "google/gemma-4-31b-it:free",
+];
+
+export async function generteTrainingPlan(profile: UserProfile | Record<string, any>): Promise<Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version">> {
 
     const normalizedProfile: UserProfile = {
         goal: profile.goal || "bulk",
@@ -18,63 +26,79 @@ export async function generteTrainingPlan(profile: UserProfile | Record <string,
 
     const apiKey = process.env.OPENROUTER_KEY;
 
-    if(!apiKey) {
+    if (!apiKey) {
         throw new Error("OPENROUTER_KEY is not set in env");
     }
 
-    const openai = new OpenAI ({
+    const openai = new OpenAI({
         apiKey,
         baseURL: "https://openrouter.ai/api/v1",
         defaultHeaders: {
             "HTTP-Referer": process.env.BASE_URL || "http://localhost:3000",
-            "X-Title" : "RandomRep Plan Generator"
+            "X-Title": "RandomRep Plan Generator"
         },
     });
 
-    //Build prompt for AI
     const prompt = buildPrompt(normalizedProfile);
+    let lastError: Error | null = null;
 
-    try{
-        const completion = await openai.chat.completions.create({
-            model: "google/gemma-4-31b-it:free",
-            //Give AI a persona to dial in reponses
-            messages: [{
-                role: "system",
-                content: "You are and expert fitness trainer and program designer. You must respond with valid JSON only. Do not include any markdown, reasoning, or additional text"
-            },
-            {
-                role: "user",
-                content: prompt,
-            }],
-            //Temp = response accuracy. 0-2. 0 = super accurate, 2 = more random
-            temperature: 0.7,
-            response_format: {type: "json_object"}
-        });
+    for (const model of FREE_MODELS) {
+        try {
+            console.log(`[AI] Trying model: ${model}`);
 
-        const content = completion.choices[0].message.content;
+            const completion = await openai.chat.completions.create({
+                model,
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert fitness trainer and program designer. You must respond with valid JSON only. Do not include any markdown, reasoning, or additional text"
+                    },
+                    {
+                        role: "user",
+                        content: prompt,
+                    }
+                ],
+                temperature: 0.7,
+            });
 
-        if (!content) {console.error("[AI] No content in response", JSON.stringify(completion, null, 2),
+            const content = completion.choices[0].message.content;
 
-        ); throw new Error ("No content in AI reponse")
-        }
-            const planData = JSON.parse(content)
+            if (!content) {
+                console.warn(`[AI] Model ${model} returned no content, trying next...`);
+                continue;
+            }
 
+            // Strip markdown fences if model ignores instructions
+            const clean = content.replace(/```json\n?|\n?```/g, "").trim();
+            const planData = JSON.parse(clean);
+
+            console.log(`[AI] Success with model: ${model}`);
             return formatPlanResponse(planData, normalizedProfile);
 
-        }catch (error) {
+        } catch (error: any) {
+        if (error.status === 429 || error.status === 404 || error.status === 400) {
+            console.warn(`[AI] Model ${model} unavailable (${error.status}), trying next...`);
+            lastError = error;
+            continue;
+        }
+            // For other errors (e.g. bad JSON), throw immediately
             console.error("[AI] Error generating plan:", error);
             throw error;
+        }
     }
+
+    console.error("[AI] All models failed");
+    throw lastError ?? new Error("All models failed to generate a plan");
 }
 
-// Format AI response into TrainingPlan structure, also setting defaults for missing fields to make sure there is atleast a response.
-function formatPlanResponse(aiResponse: any, profile: UserProfile): Omit<TrainingPlan , "id" | "userId" | "createdAt" | "version"> {
-    const plan: Omit<TrainingPlan , "id" | "userId" | "createdAt" | "version">  = {
-        overview: {goal: aiResponse.overview?.goal || `Customized ${profile.goal} program`,
-        frequency: aiResponse.overview?.frequency || `${profile.days_per_week} days per week`,
-        split: aiResponse.overview?.split || profile.preferred_split,
-        notes: aiResponse.overview?.notes || "This program is designed to help you achieve your fitness goals based on your profile."
-    },
+function formatPlanResponse(aiResponse: any, profile: UserProfile): Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version"> {
+    const plan: Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version"> = {
+        overview: {
+            goal: aiResponse.overview?.goal || `Customized ${profile.goal} program`,
+            frequency: aiResponse.overview?.frequency || `${profile.days_per_week} days per week`,
+            split: aiResponse.overview?.split || profile.preferred_split,
+            notes: aiResponse.overview?.notes || "This program is designed to help you achieve your fitness goals based on your profile."
+        },
         weeklySchedule: (aiResponse.weeklySchedule || []).map((day: any) => ({
             day: day.day || "Day",
             focus: day.focus || "General",
@@ -93,36 +117,35 @@ function formatPlanResponse(aiResponse: any, profile: UserProfile): Omit<Trainin
     return plan;
 }
 
-//Prompt for AI 
 function buildPrompt(profile: UserProfile): string {
-  const goalMap: Record<string, string> = {
-    bulk: "build muscle and gain size",
-    cut: "lose fat and maintain muscle",
-    recomp: "simultaneously lose fat and build muscle",
-    strength: "build maximum strength",
-    endurance: "improve cardiovascular endurance and stamina",
-  };
+    const goalMap: Record<string, string> = {
+        bulk: "build muscle and gain size",
+        cut: "lose fat and maintain muscle",
+        recomp: "simultaneously lose fat and build muscle",
+        strength: "build maximum strength",
+        endurance: "improve cardiovascular endurance and stamina",
+    };
 
-  const experienceMap: Record<string, string> = {
-    beginner: "beginner (0-1 years of training experience)",
-    intermediate: "intermediate (1-3 years of training experience)",
-    advanced: "advanced (3+ years of training experience)",
-  };
+    const experienceMap: Record<string, string> = {
+        beginner: "beginner (0-1 years of training experience)",
+        intermediate: "intermediate (1-3 years of training experience)",
+        advanced: "advanced (3+ years of training experience)",
+    };
 
-  const equipmentMap: Record<string, string> = {
-    full_gym: "full gym access with all equipment",
-    home: "home gym with limited equipment",
-    dumbbells: "only dumbbells available",
-  };
+    const equipmentMap: Record<string, string> = {
+        full_gym: "full gym access with all equipment",
+        home: "home gym with limited equipment",
+        dumbbells: "only dumbbells available",
+    };
 
-  const splitMap: Record<string, string> = {
-    full_body: "full body workouts",
-    upper_lower: "upper/lower split",
-    ppl: "push/pull/legs split",
-    custom: "best split for their goals",
-  };
+    const splitMap: Record<string, string> = {
+        full_body: "full body workouts",
+        upper_lower: "upper/lower split",
+        ppl: "push/pull/legs split",
+        custom: "best split for their goals",
+    };
 
-  return `Create a personalized ${profile.days_per_week}-day per week training plan for someone with the following profile:
+    return `Create a personalized ${profile.days_per_week}-day per week training plan for someone with the following profile:
   
     Goal: ${goalMap[profile.goal] || profile.goal}
     Experience Level: ${experienceMap[profile.experience] || profile.experience}

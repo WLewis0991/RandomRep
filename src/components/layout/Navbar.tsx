@@ -18,7 +18,7 @@ function Navbar() {
         <nav>
           {user ? 
           (
-          <><Link to="/auth/sign-in">
+          <><Link to="/profile">
             <Button variant="ghost" size="sm">My Plan</Button>
           </Link>
           <UserButton className="bg-accent"/></>

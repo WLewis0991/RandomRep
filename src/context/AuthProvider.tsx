@@ -57,10 +57,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     }, [user]);
 
     useEffect(() => {
-        if (user) {
+        if(!isLoading && user) {
             refreshData();
         }
-    }, [user, refreshData]);
+    }, [user, isLoading, refreshData]);
+
 
     async function saveProfile(profileData: Omit<UserProfile, 'userId' | 'updatedAt'>) {
         if (!user) throw new Error("User must be authenticated to save profile");
