@@ -8,6 +8,7 @@ export interface AuthContextType {
     saveProfile: (
         profile: Omit<UserProfile, "userId" | "updatedAt">
     ) => Promise<void>;
+    generatePlan: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

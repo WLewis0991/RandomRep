@@ -31,13 +31,20 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
     async function saveProfile(profileData: Omit<UserProfile, 'userId' | 'updatedAt'>) {
         if (!user){
-            throw new Error("User must be uthenticated to save profile")
+            throw new Error("User must be authenticated to save profile")
         }
         await api.saveProfile(user.id, profileData)
     }
 
+    async function generatePlan() {
+        if (!user){
+            throw new Error("User must be authenticated to generate plan")
+        }
+        await api.generatePlan(user.id)
+    }
+
     return (
-        <AuthContext.Provider value={{ user, isLoading, saveProfile }}>
+        <AuthContext.Provider value={{ user, isLoading, saveProfile, generatePlan }}>
             {children}
         </AuthContext.Provider>
     );

@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button";
 import { ArrowRight, Loader2 } from "lucide-react";
 import type { UserProfile } from "../types/types";
 import { useAuth } from "../context/useAuth";
+import { useNavigate } from "react-router-dom";
 
 
 const goalOptions = [
@@ -52,7 +53,7 @@ const splitOptions = [
 ];
 
 function Onboarding() {
-  const{user, saveProfile} = useAuth();
+  const{user, saveProfile, generatePlan} = useAuth();
   const [formData, setFormData] = useState({
     goal:"bulk",
     experience:"intermediate",
@@ -65,7 +66,7 @@ function Onboarding() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
-
+  const navigate = useNavigate();
 
   function updateForm(field: string, value: string) {
     setFormData((prev) => ({...prev, [field]: value }));
@@ -90,6 +91,8 @@ function Onboarding() {
     try{
       await saveProfile(profile);
       setIsGenerating(true);
+      await generatePlan();
+      navigate("/profile");
     }catch(err) {
       setError ( err instanceof Error ? err.message : "Failed to save profile");
     } finally {

@@ -1,3 +1,4 @@
+
 import type { UserProfile } from "../types/types";
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost3000"
 
@@ -23,5 +24,10 @@ export const api = {
     profile: Omit<UserProfile, "userId" | "updatedAt">,
   ) => {
     return post("/profile", { userId, ...profile });
+  },
+    generatePlan: (
+    userId: string,
+  ) => {
+    return post("/plan/generate", { userId });
   }
 };

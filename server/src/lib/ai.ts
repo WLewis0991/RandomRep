@@ -24,7 +24,7 @@ export async function generteTrainingPlan(profile: UserProfile | Record <string,
 
     const openai = new OpenAI ({
         apiKey,
-        baseURL: "http://openrouter.ai/api/v1",
+        baseURL: "https://openrouter.ai/api/v1",
         defaultHeaders: {
             "HTTP-Referer": process.env.BASE_URL || "http://localhost:3000",
             "X-Title" : "RandomRep Plan Generator"
@@ -36,7 +36,7 @@ export async function generteTrainingPlan(profile: UserProfile | Record <string,
 
     try{
         const completion = await openai.chat.completions.create({
-            model: process.env.OPENROUTER_MODEL || "nvidia/nemotron-3-super-120b-a12b:free",
+            model: "openai/gpt-oss-20b:free",  
             //Give AI a persona to dial in reponses
             messages: [{
                 role: "system",
