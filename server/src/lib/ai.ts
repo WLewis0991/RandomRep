@@ -12,6 +12,44 @@ const FREE_MODELS = [
   "google/gemma-4-31b-it:free",
 ];
 
+function extractJSON(raw: string): any {
+  // Strip markdown fences
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const text = fenced ? fenced[1].trim() : raw.trim();
+
+  // Find the outermost { } block
+  const start = text.indexOf("{");
+  if (start === -1) throw new SyntaxError("No JSON object found in response");
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === "\\" && inString) {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) return JSON.parse(text.slice(start, i + 1));
+    }
+  }
+
+  throw new SyntaxError("Truncated JSON — no closing brace found");
+}
+
 export async function generteTrainingPlan(
   profile: UserProfile | Record<string, any>,
 ): Promise<Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version">> {
@@ -52,8 +90,9 @@ export async function generteTrainingPlan(
         messages: [
           {
             role: "system",
-            content:
-              "You are an expert fitness trainer and program designer. You must respond with valid JSON only. Do not include any markdown, reasoning, or additional text",
+            content: `You are a fitness coach API. 
+                      Respond with ONLY valid JSON. No explanation, no markdown, no text before or after.
+                      The response must be a single JSON object.`,
           },
           {
             role: "user",
@@ -70,9 +109,7 @@ export async function generteTrainingPlan(
         continue;
       }
 
-      // Strip markdown fences if model ignores instructions
-      const clean = content.replace(/```json\n?|\n?```/g, "").trim();
-      const planData = JSON.parse(clean);
+      const planData = extractJSON(content);
 
       console.log(`[AI] Success with model: ${model}`);
       return formatPlanResponse(planData, normalizedProfile);
@@ -80,15 +117,15 @@ export async function generteTrainingPlan(
       if (
         error.status === 429 ||
         error.status === 404 ||
-        error.status === 400
+        error.status === 400 ||
+        error instanceof SyntaxError
       ) {
         console.warn(
-          `[AI] Model ${model} unavailable (${error.status}), trying next...`,
+          `[AI] Model ${model} failed (${error instanceof SyntaxError ? "bad JSON" : error.status}), trying next...`,
         );
         lastError = error;
         continue;
       }
-      // For other errors (e.g. bad JSON), throw immediately
       console.error("[AI] Error generating plan:", error);
       throw error;
     }
