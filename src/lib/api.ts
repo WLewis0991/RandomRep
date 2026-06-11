@@ -1,6 +1,6 @@
 
 import type { UserProfile } from "../types/types";
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost3000"
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
 
 async function post(path: string, body:object){
     const res = await fetch(`${BASE_URL}/api${path}`, {
@@ -11,7 +11,7 @@ async function post(path: string, body:object){
 
     if(!res.ok)
         throw new Error(
-            (await res.json().catch(() => ({}))).error || "Resqust failed",
+            (await res.json().catch(() => ({}))).error || "Request failed",
         );
 
     return res.json();
@@ -22,7 +22,7 @@ async function get(path: string){
 
     if(!res.ok)
         throw new Error(
-            (await res.json().catch(() => ({}))).error || "Resqust failed",
+            (await res.json().catch(() => ({}))).error || "Request failed",
         );
 
     return res.json();

@@ -47,7 +47,7 @@ const equipmentOptions = [
 
 const splitOptions = [
   { value: "full_body", label: "Full Body"},
-  { value: "upper_body", label: "Upper/Lower Split"},
+  { value: "upper_lower", label: "Upper/Lower Split"},
   { value: "ppl", label: "Push/Pull/Legs"},
   { value: "custom", label: "Let AI Decide"},
 ];

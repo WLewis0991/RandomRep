@@ -31,6 +31,6 @@ model user_profiles {
   session_length  Int
   equipment String @db.VarChar(20)
   injuries String? 
-  preffered_split String @db.VarChar(20)
+  preferred_split String @db.VarChar(20)
   updated_at DateTime @default(now()) @db.Timestamptz(6)
 }

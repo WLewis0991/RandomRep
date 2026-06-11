@@ -75,7 +75,7 @@ function DayCard({ schedule }: { schedule: DaySchedule }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted text-xs uppercase tracking-wider">
-              <th className="text-left py-2 pr-4 font-medium">Excercise</th>
+              <th className="text-left py-2 pr-4 font-medium">Exercise</th>
               <th className="py-2 px-4 font-medium">Sets x Reps</th>
               <th className="py-2 px-4 font-medium">Rest</th>
               <th className="py-2 px-4 font-medium">RPE</th>

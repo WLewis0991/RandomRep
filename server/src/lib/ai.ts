@@ -50,7 +50,7 @@ function extractJSON(raw: string): any {
   throw new SyntaxError("Truncated JSON — no closing brace found");
 }
 
-export async function generteTrainingPlan(
+export async function generateTrainingPlan(
   profile: UserProfile | Record<string, any>,
 ): Promise<Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version">> {
   const normalizedProfile: UserProfile = {

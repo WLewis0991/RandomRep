@@ -41,7 +41,7 @@ profileRouter.post("/", async (req: Request, res: Response) => {
                 session_length: sessionLength,
                 equipment,
                 injuries: injuries || null,
-                preffered_split: preferredSplit,
+                preferred_split: preferredSplit,
                 updated_at: new Date(),
             },
             create: {
@@ -52,11 +52,11 @@ profileRouter.post("/", async (req: Request, res: Response) => {
                 session_length: sessionLength,
                 equipment,
                 injuries: injuries || null,
-                preffered_split: preferredSplit,
+                preferred_split: preferredSplit,
             },
         });
 
-        res.json({succes: true})
+        res.json({success: true})
 
     }catch (error) {
         console.error("Error saving profile:", error);

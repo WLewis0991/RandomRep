@@ -1,6 +1,6 @@
 import { Router, type Request, type Response} from "express";
 import { prisma } from "../lib/prisma";
-import { generteTrainingPlan } from "../lib/ai";
+import { generateTrainingPlan } from "../lib/ai";
 
 
 export const planRouter = Router();
@@ -33,7 +33,7 @@ planRouter.post("/generate", async (req:Request, res: Response) => {
         let planJson;
         
         try{
-            planJson = await generteTrainingPlan(profile);
+            planJson = await generateTrainingPlan(profile);
 
         } catch (error){
             console.error("Error generating plan:", error);
