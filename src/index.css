@@ -5,13 +5,23 @@
 @theme {
   --font-sans: "Geist", system-ui, sans-serif;
 
+  --color-background: #fafafa;
+  --color-foreground: #0a0a0a;
+  --color-muted: #71717a;
+  --color-border: #e4e4e7;
+  --color-card: #ffffff;
+  --color-accent: #ea580c;
+  --color-accent-hover: #c2410c;
+}
+
+.dark {
   --color-background: #0a0a0a;
   --color-foreground: #fafafa;
   --color-muted: #a1a1aa;
   --color-border: #27272a;
   --color-card: #18181b;
-  --color-accent: #a3e635;
-  --color-accent-hover: #84cc16;
+  --color-accent: #f97316;
+  --color-accent-hover: #ea580c;
 }
 
 @layer base {
@@ -28,7 +38,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Override Better Auth colors  */
   [data-slot="skeleton"],
   .animate-pulse {
     background-color: var(--color-border) !important;

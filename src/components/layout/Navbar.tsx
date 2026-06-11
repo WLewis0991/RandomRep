@@ -1,11 +1,13 @@
-import { Dumbbell } from "lucide-react"
+import { Dumbbell, Palette } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "../ui/Button"
 import { useAuth } from "../../context/useAuth";
 import { UserButton } from "@neondatabase/auth/react";
+import { useTheme } from "../../context/ThemeProvider";
 
 function Navbar() {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -15,24 +17,33 @@ function Navbar() {
             <span className="font-semibold text-lg">RandomRep</span>
         </Link>
 
-        <nav>
-          {user ? 
-          (
-          <><Link to="/profile">
-            <Button variant="ghost" size="sm">My Plan</Button>
-          </Link>
-          <UserButton className="bg-accent"/></>
-          ):(
-          <>
-          <Link to="/auth/sign-in">
-            <Button variant="ghost" size="sm">Sign In</Button>
-          </Link>
-          <Link to="/auth/sign-up">
-            <Button size="sm">Sign Up</Button>
-          </Link>
-          </>
-          )}
-        </nav>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl text-muted hover:text-foreground hover:bg-card transition-colors cursor-pointer"
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            <Palette className="w-5 h-5" />
+          </button>
+          <nav>
+            {user ?
+            (
+            <><Link to="/profile">
+              <Button variant="ghost" size="sm">My Plan</Button>
+            </Link>
+            <UserButton className="bg-accent"/></>
+            ):(
+            <>
+            <Link to="/auth/sign-in">
+              <Button variant="ghost" size="sm">Sign In</Button>
+            </Link>
+            <Link to="/auth/sign-up">
+              <Button size="sm">Sign Up</Button>
+            </Link>
+            </>
+            )}
+          </nav>
+        </div>
       </div>
     </header>
   )
