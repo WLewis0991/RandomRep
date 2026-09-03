@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/badge/Prisma-7.8-2D3748?logo=prisma" alt="Prisma" />
   <img src="https://img.shields.io/badge/Express-5-000000?logo=express" alt="Express" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
+  <img src="https://img.shields.io/badge/Neon_Auth-Better_Auth-00E699?logo=neon" alt="Neon Auth" />
 </p>
 
 <h1 align="center">RandomRep</h1>
@@ -15,9 +16,14 @@
   <a href="#features"><strong>Explore Features »</strong></a>
   <br />
   <br />
+  🚀 <strong>Live:</strong> <a href="https://randomrep.vercel.app">https://randomrep.vercel.app</a>
+  <br />
+  <br />
   <a href="#getting-started">Quick Start</a>
   ·
   <a href="#project-structure">Structure</a>
+  ·
+  <a href="#deployment">Deployment</a>
   ·
   <a href="#coming-soon">Roadmap</a>
 </p>
@@ -41,8 +47,8 @@ RandomRep generates custom workout programs tailored to your fitness level, goal
 - **AI-Generated Workout Plans** — Plans built by LLMs (OpenRouter) based on your unique profile
 - **Profile-Based Customization** — Goals (cut, bulk, strength, endurance), experience level, days per week, session length, equipment, injuries
 - **Split Types** — Full body, Upper/Lower, Push/Pull/Legs, or let AI decide
-- **Plan History & Versioning** — Regenerate plans and track versions over time
-- **Neon Auth** — Secure authentication via email/password and OAuth
+- **Plan History & Versioning** — Regenerate plans and browse every past version from the Profile page
+- **Neon Auth** — Secure authentication via email/password with JWT-verified sessions (Better Auth)
 - **Dark & Light Mode** — Toggle between themes with orange-red accent palette
 - **Responsive Design** — Works on desktop and mobile
 
@@ -53,12 +59,13 @@ RandomRep generates custom workout programs tailored to your fitness level, goal
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | React 19, TypeScript 6, Tailwind CSS v4, React Router 7 |
-| **Backend** | Express 5, TypeScript |
+| **Backend** | Express 5, TypeScript, bundler tsup |
 | **Database** | PostgreSQL (Neon), Prisma 7 ORM |
-| **Auth** | Neon Auth (Better Auth) |
+| **Auth** | Neon Auth (Better Auth), JWT verified via `jose` + JWKS |
 | **AI** | OpenRouter API (multi-model fallback) |
 | **Icons** | Lucide React |
-| **Build** | Vite 8, tsx |
+| **Build** | Vite 8, tsup |
+| **Deploy** | Vercel (serverless + static), same-origin |
 
 <br />
 
@@ -73,7 +80,7 @@ RandomRep generates custom workout programs tailored to your fitness level, goal
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-username/randomrep.git
+git clone https://github.com/WLewis0991/RandomRep.git
 cd randomrep
 
 # Install frontend dependencies
@@ -89,10 +96,16 @@ cp server/.env.example server/.env
 
 Edit `.env` and `server/.env` with your credentials:
 
-- `VITE_API_URL` — Your server URL (default: `http://localhost:3000`)
-- `VITE_NEON_AUTH_URL` — Your Neon Auth project URL
+- `VITE_NEON_AUTH_URL` — Your Neon Auth base URL
+- `NEON_AUTH_URL` — Same Neon Auth base URL, used by the server to verify JWTs
 - `DATABASE_URL` — Your PostgreSQL connection string (Neon)
 - `OPENROUTER_KEY` — Your OpenRouter API key
+- `OPENROUTER_MODEL` — Optional, defaults to `openai/gpt-oss-120b:free`
+- `ALLOWED_ORIGINS` — Optional CORS allowlist, defaults to `http://localhost:5173`
+
+> **Same-origin**: The frontend proxies API calls to `/api/*` on the same
+> origin (Vite's dev proxy or Vercel's routing), so `VITE_API_URL` is
+> optional and only needed when the API lives on a separate host.
 
 ### Database
 
@@ -123,7 +136,7 @@ randomrep/
 ├── src/                    # Frontend (React + Vite)
 │   ├── components/
 │   │   ├── layout/         # Navbar
-│   │   └── ui/             # Button, Card, Select, Textarea, PlanDisplay
+│   │   └── ui/             # Button, Card, Select, Textarea, PlanDisplay, PlanHistory
 │   ├── context/            # AuthProvider, ThemeProvider
 │   ├── lib/                # API client, Auth client
 │   ├── pages/              # Home, Onboarding, Profile, Auth, Account
@@ -134,12 +147,36 @@ randomrep/
 │   │   └── migrations/     # Prisma migrations
 │   ├── src/
 │   │   ├── lib/            # AI service, Prisma client
-│   │   └── routes/         # Profile, Plan API routes
+│   │   ├── middleware/     # Auth (JWKS JWT), validation, rate limiting
+│   │   ├── routes/         # Profile, Plan API routes
+│   │   ├── app.ts          # createApp() shared Express assembly
+│   │   └── vercel-handler.ts  # Serverless entry for Vercel
+│   ├── tsup.config.ts      # Bundles server + serverless handler
 │   └── generated/          # Generated Prisma client
+├── scripts/                # E2E smoke test (e2e-smoke.mjs)
+├── vercel.json             # Same-origin Vercel routing
 ├── .env                    # Frontend env vars
 ├── vite.config.ts
 └── package.json
 ```
+
+<br />
+
+## Deployment
+
+The app is deployed to **Vercel** (`https://randomrep.vercel.app`) with a
+same-origin architecture — the Express API and the React static bundle are
+served from a single domain.
+
+- **Routing** (`vercel.json`): `/api/(.*)` is handled by the serverless
+  Express handler; the React SPA gets a `filesystem` fallback to `/index.html`
+- **Build**: the server is bundled with `tsup` into `server/dist-vercel/`,
+  which `@vercel/node` picks up; the frontend is built with Vite into `dist/`
+- **Database**: Neon PostgreSQL, with Neon Auth (Better Auth) sessions verified
+  server-side by validating the issued JWT's signature against the Auth JWKS
+  (via `jose`)
+- **Pushing to `main`** triggers an automatic production deployment through the
+  Git integration
 
 <br />
 
