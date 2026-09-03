@@ -2,7 +2,8 @@
 import type { UserProfile } from "../types/types";
 import { authClient } from "./auth";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
+const configuredBase = import.meta.env.VITE_API_URL;
+const BASE_URL = configuredBase ? configuredBase : "";
 
 async function getSessionToken(): Promise<string | null> {
     try {
