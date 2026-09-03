@@ -1,11 +1,33 @@
 
 import type { UserProfile } from "../types/types";
+import { authClient } from "./auth";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
+
+async function getSessionToken(): Promise<string | null> {
+    try {
+        const result = await authClient.getSession();
+        return result?.data?.session?.token ?? null;
+    } catch {
+        return null;
+    }
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+    const token = await getSessionToken();
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+}
 
 async function post(path: string, body:object){
     const res = await fetch(`${BASE_URL}/api${path}`, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: await authHeaders(),
         body: JSON.stringify(body),
     });
 
@@ -18,7 +40,8 @@ async function post(path: string, body:object){
 }
 
 async function get(path: string){
-    const res = await fetch(`${BASE_URL}/api${path}`);
+    const headers = await authHeaders();
+    const res = await fetch(`${BASE_URL}/api${path}`, { headers });
 
     if(!res.ok)
         throw new Error(
@@ -30,20 +53,15 @@ async function get(path: string){
 
 export const api = {
   saveProfile: (
-    userId: string,
     profile: Omit<UserProfile, "userId" | "updatedAt">,
   ) => {
-    return post("/profile", { userId, ...profile });
+    return post("/profile", profile);
   },
-  generatePlan: (
-    userId: string,
-  ) => {
-    return post("/plan/generate", { userId });
+  generatePlan: () => {
+    return post("/plan/generate", {});
   },
 
-  getCurrentPlan: (
-    userId: string,
-  ) => {
-    return get(`/plan/current?userId=${userId}`);
+  getCurrentPlan: () => {
+    return get("/plan/current");
   }
 };

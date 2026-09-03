@@ -1,16 +1,12 @@
-import { Router, type Request, type Response} from "express";
+import { Router } from "express";
 import { prisma } from "../lib/prisma";
+import type { AuthenticatedRequest } from "../middleware/auth";
 
 export const profileRouter = Router();
 
-profileRouter.post("/", async (req: Request, res: Response) => {
+profileRouter.post("/", async (req: AuthenticatedRequest, res) => {
     try{
-        const { userId, ...profileData} = req.body;
-
-        if(!userId){
-            return res.status(400).json({error:"User ID required"});
-        }
-
+        const userId = req.userId!;
         const {
             goal,
             experience,
@@ -19,7 +15,7 @@ profileRouter.post("/", async (req: Request, res: Response) => {
             equipment,
             injuries,
             preferredSplit,
-        } = profileData;
+        } = req.body;
 
         if (
             !goal ||

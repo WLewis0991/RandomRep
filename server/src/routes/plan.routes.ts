@@ -1,18 +1,14 @@
-import { Router, type Request, type Response} from "express";
+import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { generateTrainingPlan } from "../lib/ai";
-
+import type { AuthenticatedRequest } from "../middleware/auth";
 
 export const planRouter = Router();
 
-planRouter.post("/generate", async (req:Request, res: Response) => {
+planRouter.post("/generate", async (req: AuthenticatedRequest, res) => {
     try{
-        const{ userId }=req.body;
+        const userId = req.userId!;
 
-        if(!userId) {
-            return res.status(400).json({error:"User ID required"})
-        }
-        
         const profile = await prisma.user_profiles.findUnique({
             where: {user_id: userId}
         });
@@ -21,7 +17,6 @@ planRouter.post("/generate", async (req:Request, res: Response) => {
             return res.status(400).json({error: "User profile not found. Complete onboarding first"})
         }
 
-        //Plan Schema
         const latestPlan = await prisma.training_plans.findFirst({
             where: {user_id: userId},
             orderBy: { created_at: "desc"},
@@ -31,7 +26,7 @@ planRouter.post("/generate", async (req:Request, res: Response) => {
         const nextVersion = latestPlan ? latestPlan.version + 1 : 1;
 
         let planJson;
-        
+
         try{
             planJson = await generateTrainingPlan(profile);
 
@@ -63,13 +58,9 @@ planRouter.post("/generate", async (req:Request, res: Response) => {
     }
 });
 
-planRouter.get("/current", async (req: Request, res: Response) => {
+planRouter.get("/current", async (req: AuthenticatedRequest, res) => {
     try{
-        const userId  = req.query.userId as string;;
-
-        if(!userId) {
-            return res.status(400).json({error:"User ID required"})
-        }
+        const userId = req.userId!;
 
         const currentPlan = await prisma.training_plans.findFirst({
             where: {user_id: userId},

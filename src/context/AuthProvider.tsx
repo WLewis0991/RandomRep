@@ -37,7 +37,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         isRefreshing.current = true;
         setIsDataLoading(true);
         try {
-            const planData = await api.getCurrentPlan(user.id).catch(() => null);
+            const planData = await api.getCurrentPlan().catch(() => null);
             if (planData) {
                 console.log("Fetched plan data:", planData.planJson);
                 setPlan({
@@ -65,13 +65,13 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
     async function saveProfile(profileData: Omit<UserProfile, 'userId' | 'updatedAt'>) {
         if (!user) throw new Error("User must be authenticated to save profile");
-        await api.saveProfile(user.id, profileData);
+        await api.saveProfile(profileData);
         await refreshData();
     }
 
     async function generatePlan() {
         if (!user) throw new Error("User must be authenticated to generate plan");
-        await api.generatePlan(user.id);
+        await api.generatePlan();
         await refreshData();
     }
 
