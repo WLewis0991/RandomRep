@@ -457,6 +457,26 @@ planRouter.get("/current", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch current plan" });
   }
 });
+planRouter.get("/history", async (req, res) => {
+  try {
+    const userId = req.userId;
+    const plans = await prisma.training_plans.findMany({
+      where: { user_id: userId },
+      orderBy: { version: "desc" }
+    });
+    res.json({
+      plans: plans.map((p) => ({
+        id: p.id,
+        version: p.version,
+        createdAt: p.created_at,
+        planJson: p.plan_json
+      }))
+    });
+  } catch (error) {
+    console.error("Error fetching plan history:", error);
+    res.status(500).json({ error: "Failed to fetch plan history" });
+  }
+});
 
 // src/middleware/auth.ts
 import { createRemoteJWKSet, jwtVerify } from "jose";

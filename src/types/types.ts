@@ -47,3 +47,14 @@ export interface TrainingPlan {
   version: number;
   createdAt: string;
 }
+
+export interface PlanHistoryItem {
+  id: string;
+  version: number;
+  createdAt: string;
+  planJson: TrainingPlan;
+}
+
+export interface PlanHistoryResponse {
+  plans: PlanHistoryItem[];
+}

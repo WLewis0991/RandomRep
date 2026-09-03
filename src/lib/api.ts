@@ -64,5 +64,9 @@ export const api = {
 
   getCurrentPlan: () => {
     return get("/plan/current");
+  },
+
+  getPlanHistory: () => {
+    return get("/plan/history");
   }
 };

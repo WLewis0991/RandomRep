@@ -12,6 +12,7 @@ const { prismaMock, generateTrainingPlanMock } = vi.hoisted(() => ({
     training_plans: {
       findFirst: vi.fn(),
       create: vi.fn(),
+      findMany: vi.fn(),
     },
   },
   generateTrainingPlanMock: vi.fn(),
@@ -141,5 +142,50 @@ describe("GET /current", () => {
 
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("Current plan not found");
+  });
+});
+
+describe("GET /history", () => {
+  it("returns all plan versions ordered newest-first for the verified user", async () => {
+    prismaMock.training_plans.findMany.mockResolvedValue([
+      {
+        id: "plan-2",
+        user_id: "user-123",
+        plan_json: { overview: { goal: "Bulking" } },
+        plan_text: "{}",
+        version: 2,
+        created_at: new Date("2026-02-01"),
+      },
+      {
+        id: "plan-1",
+        user_id: "user-123",
+        plan_json: { overview: { goal: "Cutting" } },
+        plan_text: "{}",
+        version: 1,
+        created_at: new Date("2026-01-01"),
+      },
+    ]);
+
+    const res = await request(buildApp()).get("/history");
+
+    expect(res.status).toBe(200);
+    expect(res.body.plans).toHaveLength(2);
+    expect(res.body.plans[0].version).toBe(2);
+    expect(res.body.plans[1].version).toBe(1);
+    expect(prismaMock.training_plans.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { user_id: "user-123" },
+        orderBy: { version: "desc" },
+      }),
+    );
+  });
+
+  it("returns an empty plans array when the user has no plans", async () => {
+    prismaMock.training_plans.findMany.mockResolvedValue([]);
+
+    const res = await request(buildApp()).get("/history");
+
+    expect(res.status).toBe(200);
+    expect(res.body.plans).toEqual([]);
   });
 });

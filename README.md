@@ -149,7 +149,8 @@ randomrep/
 |--------|----------|-------------|
 | POST   | `/api/profile` | Create or update user profile |
 | POST   | `/api/plan/generate` | Generate a new training plan |
-| GET    | `/api/plan/current?userId=` | Get the latest plan for a user |
+| GET    | `/api/plan/current` | Get the latest plan for a user |
+| GET    | `/api/plan/history` | List all plan versions for a user |
 
 <br />
 
