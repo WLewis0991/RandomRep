@@ -1,11 +1,18 @@
 import { Router } from "express";
-import { prisma } from "../lib/prisma";
-import { generateTrainingPlan } from "../lib/ai";
-import type { AuthenticatedRequest } from "../middleware/auth";
+import { prisma } from "../lib/prisma.js";
+import { generateTrainingPlan } from "../lib/ai.js";
+import type { AuthenticatedRequest } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { generatePlanSchema } from "../validation/schemas.js";
+import { planGenerationLimiter } from "../middleware/rateLimit.js";
 
 export const planRouter = Router();
 
-planRouter.post("/generate", async (req: AuthenticatedRequest, res) => {
+planRouter.post(
+  "/generate",
+  planGenerationLimiter,
+  validate(generatePlanSchema),
+  async (req: AuthenticatedRequest, res) => {
     try{
         const userId = req.userId!;
 

@@ -6,6 +6,7 @@ import Account from "./pages/Account";
 import Profile from "./pages/Profile";
 import Navbar from "./components/layout/Navbar";
 import AuthProvider from "./context/AuthProvider";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 function App() {
   return (
@@ -15,13 +16,15 @@ function App() {
         <div className="min-h-screen flex flex-col">
           <Navbar />
           <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/auth/:pathname" element={<Auth />} />
-              <Route path="/account/:pathname" element={<Account />} />
-            </Routes>
+            <ErrorBoundary>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/auth/:pathname" element={<Auth />} />
+                <Route path="/account/:pathname" element={<Account />} />
+              </Routes>
+            </ErrorBoundary>
           </main>
         </div>
       </BrowserRouter>

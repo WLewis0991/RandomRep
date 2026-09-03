@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import type { TrainingPlan, UserProfile } from "../types/serverTypes";
+import type { TrainingPlan, UserProfile } from "../types/serverTypes.js";
 
 dotenv.config();
 

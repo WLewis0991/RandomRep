@@ -68,4 +68,54 @@ describe("POST /api/profile", () => {
     expect(res.status).toBe(400);
     expect(prismaMock.user_profiles.upsert).not.toHaveBeenCalled();
   });
+
+  it("rejects invalid enum values", async () => {
+    const res = await request(buildApp()).post("/").send({
+      goal: "huge",
+      experience: "intermediate",
+      daysPerWeek: 4,
+      sessionLength: 60,
+      equipment: "full_gym",
+      preferredSplit: "upper_lower",
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("goal");
+    expect(prismaMock.user_profiles.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects out-of-range numeric fields", async () => {
+    const res = await request(buildApp()).post("/").send({
+      goal: "bulk",
+      experience: "intermediate",
+      daysPerWeek: 9,
+      sessionLength: 100000,
+      equipment: "full_gym",
+      preferredSplit: "upper_lower",
+    });
+
+    expect(res.status).toBe(400);
+    expect(prismaMock.user_profiles.upsert).not.toHaveBeenCalled();
+  });
+
+  it("accepts an optional empty injuries string as undefined", async () => {
+    prismaMock.user_profiles.upsert.mockResolvedValue({});
+
+    const res = await request(buildApp()).post("/").send({
+      goal: "cut",
+      experience: "beginner",
+      daysPerWeek: 3,
+      sessionLength: 45,
+      equipment: "home",
+      preferredSplit: "full_body",
+      injuries: "",
+    });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.user_profiles.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ injuries: null }),
+      }),
+    );
+  });
 });

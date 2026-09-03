@@ -2,9 +2,9 @@ import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { profileRouter } from "./routes/profile.routes";
-import { planRouter } from "./routes/plan.routes";
-import { requireAuth } from "./middleware/auth";
+import { profileRouter } from "./routes/profile.routes.js";
+import { planRouter } from "./routes/plan.routes.js";
+import { requireAuth } from "./middleware/auth.js";
 
 dotenv.config();
 

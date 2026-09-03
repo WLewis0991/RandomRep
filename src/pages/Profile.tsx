@@ -4,12 +4,35 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Calendar, Dumbbell, RefreshCcw, Target, TrendingUp } from "lucide-react";
 import { PlanDisplay } from "../components/ui/PlanDisplay";
+import { Skeleton } from "../components/ui/Skeleton";
 
 
 function Profile() {
     const { user, isLoading, isDataLoading, plan, generatePlan } = useAuth();
 
-    if (isLoading || isDataLoading) return null;
+    if (isLoading || (isDataLoading && !plan)) {
+      return (
+        <div className="min-h-screen pt-24 pb-12 px-6">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+              <Skeleton className="h-10 w-36" />
+            </div>
+            <div className="grid md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-20" />
+              ))}
+            </div>
+            <Skeleton className="h-28" />
+            <Skeleton className="h-64" />
+            <Skeleton className="h-24" />
+          </div>
+        </div>
+      );
+    }
     if (!user) return <Navigate to="/auth/sign-in" replace />;
     if (!plan) return <Navigate to="/onboarding" replace />;
 
@@ -37,10 +60,11 @@ function Profile() {
           <Button
             variant="secondary"
             className="gap-2"
+            disabled={isDataLoading}
             onClick={async () => await generatePlan()}
           >
-            <RefreshCcw className="w-4 h-4" />
-            Regenerate Plan
+            <RefreshCcw className={`w-4 h-4 ${isDataLoading ? "animate-spin" : ""}`} />
+            {isDataLoading ? "Generating..." : "Regenerate Plan"}
           </Button>
         </div>
 
