@@ -1,7 +1,26 @@
 import type { Request, Response, NextFunction } from "express";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
+}
+
+let jwksCache:
+  | { jwks: ReturnType<typeof createRemoteJWKSet>; key: string }
+  | undefined;
+
+function getJwks(authUrl: string) {
+  if (jwksCache && jwksCache.key === authUrl) return jwksCache.jwks;
+  const jwks = createRemoteJWKSet(
+    new URL(`${authUrl}/.well-known/jwks.json`),
+  );
+  jwksCache = { jwks, key: authUrl };
+  return jwks;
+}
+
+function authOrigin(authUrl: string): string {
+  const url = new URL(authUrl);
+  return `${url.protocol}//${url.host}`;
 }
 
 export async function requireAuth(
@@ -24,29 +43,19 @@ export async function requireAuth(
   }
 
   const token = authHeader.slice(7);
+  const issuer = authOrigin(authUrl);
 
   try {
-    const response = await fetch(`${authUrl}/get-session`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const { payload } = await jwtVerify(token, getJwks(authUrl), {
+      issuer,
+      audience: issuer,
     });
 
-    if (!response.ok) {
-      return res.status(401).json({ error: "Invalid or expired session" });
-    }
-
-    const data = (await response.json()) as {
-      data?: { user?: { id?: string } };
-      user?: { id?: string };
-    };
-    const user = data?.data?.user ?? data?.user;
-
-    if (!user?.id) {
+    if (!payload.sub) {
       return res.status(401).json({ error: "Invalid session data" });
     }
 
-    req.userId = user.id;
+    req.userId = payload.sub;
     next();
   } catch (error) {
     console.error("[Auth] Session verification failed:", error);

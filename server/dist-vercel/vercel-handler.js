@@ -459,6 +459,20 @@ planRouter.get("/current", async (req, res) => {
 });
 
 // src/middleware/auth.ts
+import { createRemoteJWKSet, jwtVerify } from "jose";
+var jwksCache;
+function getJwks(authUrl) {
+  if (jwksCache && jwksCache.key === authUrl) return jwksCache.jwks;
+  const jwks = createRemoteJWKSet(
+    new URL(`${authUrl}/.well-known/jwks.json`)
+  );
+  jwksCache = { jwks, key: authUrl };
+  return jwks;
+}
+function authOrigin(authUrl) {
+  const url = new URL(authUrl);
+  return `${url.protocol}//${url.host}`;
+}
 async function requireAuth(req, res, next) {
   const authUrl = process.env.NEON_AUTH_URL;
   if (!authUrl) {
@@ -470,21 +484,16 @@ async function requireAuth(req, res, next) {
     return res.status(401).json({ error: "Missing or invalid authorization header" });
   }
   const token = authHeader.slice(7);
+  const issuer = authOrigin(authUrl);
   try {
-    const response = await fetch(`${authUrl}/get-session`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+    const { payload } = await jwtVerify(token, getJwks(authUrl), {
+      issuer,
+      audience: issuer
     });
-    if (!response.ok) {
-      return res.status(401).json({ error: "Invalid or expired session" });
-    }
-    const data = await response.json();
-    const user = data?.data?.user ?? data?.user;
-    if (!user?.id) {
+    if (!payload.sub) {
       return res.status(401).json({ error: "Invalid session data" });
     }
-    req.userId = user.id;
+    req.userId = payload.sub;
     next();
   } catch (error) {
     console.error("[Auth] Session verification failed:", error);

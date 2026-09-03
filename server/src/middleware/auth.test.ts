@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Request, Response } from "express";
 import { requireAuth, type AuthenticatedRequest } from "./auth";
 
+vi.mock("jose", () => ({
+  createRemoteJWKSet: vi.fn(() => ({})),
+  jwtVerify: vi.fn(),
+}));
+
+import { jwtVerify } from "jose";
+
 function mockRes() {
   return {
     status: vi.fn().mockReturnThis(),
@@ -11,11 +18,12 @@ function mockRes() {
 
 beforeEach(() => {
   vi.stubEnv("NEON_AUTH_URL", "https://auth.example.com/neondb/auth");
+  vi.mocked(jwtVerify).mockClear();
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  vi.unstubAllGlobals();
+  vi.clearAllMocks();
 });
 
 describe("requireAuth", () => {
@@ -41,38 +49,32 @@ describe("requireAuth", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("attaches userId and calls next on a valid session", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({ data: { user: { id: "user-456" } } }),
+  it("attaches userId and calls next on a valid signed JWT", async () => {
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: { sub: "user-456" },
+      protectedHeader: { alg: "EdDSA" },
     });
-    vi.stubGlobal("fetch", fetchMock);
 
     const req = {
-      headers: { authorization: "Bearer token-123" },
+      headers: { authorization: "Bearer eyJtoken" },
     } as Request;
     const res = mockRes();
     const next = vi.fn();
 
     await requireAuth(req as AuthenticatedRequest, res, next);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://auth.example.com/neondb/auth/get-session",
-      expect.objectContaining({
-        headers: { Authorization: "Bearer token-123" },
-      }),
-    );
+    const [, , options] = vi.mocked(jwtVerify).mock.calls[0];
+    expect(options).toMatchObject({
+      issuer: "https://auth.example.com",
+      audience: "https://auth.example.com",
+    });
     expect((req as AuthenticatedRequest).userId).toBe("user-456");
     expect(next).toHaveBeenCalledTimes(1);
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when the session endpoint rejects the token", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: false }),
-    );
+  it("returns 401 when the token fails signature verification", async () => {
+    vi.mocked(jwtVerify).mockRejectedValue(new Error("bad signature"));
 
     const req = {
       headers: { authorization: "Bearer bad-token" },
@@ -86,14 +88,11 @@ describe("requireAuth", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when the session contains no user id", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ data: {} }),
-      }),
-    );
+  it("returns 401 when the token has no sub claim", async () => {
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {},
+      protectedHeader: { alg: "EdDSA" },
+    });
 
     const req = {
       headers: { authorization: "Bearer token" },
