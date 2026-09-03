@@ -1,7 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
 
-const NEON_AUTH_URL = process.env.NEON_AUTH_URL;
-
 export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
@@ -11,7 +9,9 @@ export async function requireAuth(
   res: Response,
   next: NextFunction,
 ) {
-  if (!NEON_AUTH_URL) {
+  const authUrl = process.env.NEON_AUTH_URL;
+
+  if (!authUrl) {
     console.error("[Auth] NEON_AUTH_URL is not configured");
     return res.status(500).json({ error: "Auth not configured" });
   }
@@ -26,7 +26,7 @@ export async function requireAuth(
   const token = authHeader.slice(7);
 
   try {
-    const response = await fetch(`${NEON_AUTH_URL}/get-session`, {
+    const response = await fetch(`${authUrl}/get-session`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

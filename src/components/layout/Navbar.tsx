@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { Button } from "../ui/Button"
 import { useAuth } from "../../context/useAuth";
 import { UserButton } from "@neondatabase/auth/react";
-import { useTheme } from "../../context/ThemeProvider";
+import { useTheme } from "../../context/useTheme";
 
 function Navbar() {
   const { user } = useAuth();

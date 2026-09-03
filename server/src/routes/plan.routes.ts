@@ -40,7 +40,7 @@ planRouter.post("/generate", async (req: AuthenticatedRequest, res) => {
         const newPlan = await prisma.training_plans.create({
             data: {
                 user_id: userId,
-                plan_json: planJson,
+                plan_json: planJson as object,
                 plan_text: planText,
                 version: nextVersion,
             },

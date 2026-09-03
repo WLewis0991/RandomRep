@@ -179,6 +179,11 @@ function Onboarding() {
                     Generate My Plan <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
+                {error && (
+                  <p className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+                    {error}
+                  </p>
+                )}
               </form>
             </Card>
           ) : (

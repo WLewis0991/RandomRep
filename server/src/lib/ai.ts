@@ -12,7 +12,7 @@ const FREE_MODELS = [
   "google/gemma-4-31b-it:free",
 ];
 
-function extractJSON(raw: string): any {
+export function extractJSON(raw: string): unknown {
   // Strip markdown fences
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
   const text = fenced ? fenced[1].trim() : raw.trim();
@@ -50,17 +50,114 @@ function extractJSON(raw: string): any {
   throw new SyntaxError("Truncated JSON — no closing brace found");
 }
 
+interface RawExercise {
+  name?: unknown;
+  sets?: unknown;
+  reps?: unknown;
+  rest?: unknown;
+  rpe?: unknown;
+  notes?: unknown;
+  alternatives?: unknown;
+}
+
+interface RawDay {
+  day?: unknown;
+  focus?: unknown;
+  exercises?: RawExercise[];
+}
+
+interface RawPlan {
+  overview?: {
+    goal?: unknown;
+    frequency?: unknown;
+    split?: unknown;
+    notes?: unknown;
+  };
+  weeklySchedule?: RawDay[];
+  progression?: unknown;
+}
+
+function toNumber(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+export function formatPlanResponse(
+  aiResponse: unknown,
+  profile: UserProfile,
+): Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version"> {
+  const raw: RawPlan =
+    aiResponse && typeof aiResponse === "object" ? (aiResponse as RawPlan) : {};
+
+  const plan: Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version"> = {
+    overview: {
+      goal:
+        typeof raw.overview?.goal === "string"
+          ? raw.overview.goal
+          : `Customized ${profile.goal} program`,
+      frequency:
+        typeof raw.overview?.frequency === "string"
+          ? raw.overview.frequency
+          : `${profile.days_per_week} days per week`,
+      split:
+        typeof raw.overview?.split === "string"
+          ? raw.overview.split
+          : profile.preferred_split,
+      notes:
+        typeof raw.overview?.notes === "string"
+          ? raw.overview.notes
+          : "This program is designed to help you achieve your fitness goals based on your profile.",
+    },
+    weeklySchedule: Array.isArray(raw.weeklySchedule)
+      ? raw.weeklySchedule.map((day: RawDay) => ({
+          day: typeof day.day === "string" ? day.day : "Day",
+          focus: typeof day.focus === "string" ? day.focus : "General",
+          exercises: Array.isArray(day.exercises)
+            ? day.exercises.map((ex: RawExercise) => ({
+                name: typeof ex.name === "string" ? ex.name : "Exercise",
+                sets: toNumber(ex.sets, 3),
+                reps: typeof ex.reps === "string" ? ex.reps : "8-12",
+                rest: typeof ex.rest === "string" ? ex.rest : "60-90 sec",
+                rpe: toNumber(ex.rpe, 7),
+                notes:
+                  typeof ex.notes === "string" && ex.notes.length > 0
+                    ? ex.notes
+                    : undefined,
+                alternatives: Array.isArray(ex.alternatives)
+                  ? ex.alternatives.map((a) => String(a))
+                  : [],
+              }))
+            : [],
+        }))
+      : [],
+    progression:
+      typeof raw.progression === "string"
+        ? raw.progression
+        : "Progression strategy will be implemented based on your performance and goals.",
+  };
+  return plan;
+}
+
 export async function generateTrainingPlan(
-  profile: UserProfile | Record<string, any>,
+  profile: UserProfile | Record<string, unknown>,
 ): Promise<Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version">> {
   const normalizedProfile: UserProfile = {
-    goal: profile.goal || "bulk",
-    experience: profile.experience || "intermediate",
-    days_per_week: profile.days_per_week || 4,
-    session_length: profile.session_length || 60,
-    equipment: profile.equipment || "full_gym",
-    injuries: profile.injuries || null,
-    preferred_split: profile.preferred_split || "upper_lower",
+    goal: typeof profile.goal === "string" ? profile.goal : "bulk",
+    experience:
+      typeof profile.experience === "string" ? profile.experience : "intermediate",
+    days_per_week:
+      typeof profile.days_per_week === "number" ? profile.days_per_week : 4,
+    session_length:
+      typeof profile.session_length === "number" ? profile.session_length : 60,
+    equipment: typeof profile.equipment === "string" ? profile.equipment : "full_gym",
+    injuries:
+      profile.injuries && typeof profile.injuries === "string"
+        ? profile.injuries
+        : null,
+    preferred_split:
+      typeof profile.preferred_split === "string"
+        ? profile.preferred_split
+        : "upper_lower",
   };
 
   const apiKey = process.env.OPENROUTER_KEY;
@@ -113,17 +210,17 @@ export async function generateTrainingPlan(
 
       console.log(`[AI] Success with model: ${model}`);
       return formatPlanResponse(planData, normalizedProfile);
-    } catch (error: any) {
-      if (
-        error.status === 429 ||
-        error.status === 404 ||
-        error.status === 400 ||
-        error instanceof SyntaxError
-      ) {
+    } catch (error) {
+      const status =
+        error && typeof error === "object" && "status" in error
+          ? (error as { status?: unknown }).status
+          : undefined;
+
+      if (status === 429 || status === 404 || status === 400 || error instanceof SyntaxError) {
         console.warn(
-          `[AI] Model ${model} failed (${error instanceof SyntaxError ? "bad JSON" : error.status}), trying next...`,
+          `[AI] Model ${model} failed (${error instanceof SyntaxError ? "bad JSON" : String(status)}), trying next...`,
         );
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         continue;
       }
       console.error("[AI] Error generating plan:", error);
@@ -133,41 +230,6 @@ export async function generateTrainingPlan(
 
   console.error("[AI] All models failed");
   throw lastError ?? new Error("All models failed to generate a plan");
-}
-
-function formatPlanResponse(
-  aiResponse: any,
-  profile: UserProfile,
-): Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version"> {
-  const plan: Omit<TrainingPlan, "id" | "userId" | "createdAt" | "version"> = {
-    overview: {
-      goal: aiResponse.overview?.goal || `Customized ${profile.goal} program`,
-      frequency:
-        aiResponse.overview?.frequency ||
-        `${profile.days_per_week} days per week`,
-      split: aiResponse.overview?.split || profile.preferred_split,
-      notes:
-        aiResponse.overview?.notes ||
-        "This program is designed to help you achieve your fitness goals based on your profile.",
-    },
-    weeklySchedule: (aiResponse.weeklySchedule || []).map((day: any) => ({
-      day: day.day || "Day",
-      focus: day.focus || "General",
-      exercises: (day.exercises || []).map((ex: any) => ({
-        name: ex.name || "Exercise",
-        sets: ex.sets || 3,
-        reps: ex.reps || "8-12",
-        rest: ex.rest || "60-90 sec",
-        rpe: ex.rpe || 7,
-        notes: ex.notes || "",
-        alternatives: ex.alternatives || [],
-      })),
-    })),
-    progression:
-      aiResponse.progression ||
-      "Progression strategy will be implemented based on your performance and goals.",
-  };
-  return plan;
 }
 
 function buildPrompt(profile: UserProfile): string {
