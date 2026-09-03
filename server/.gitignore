@@ -4,6 +4,6 @@ node_modules
 
 /generated/prisma
 dist
-dist-vercel
+dist-vercel/*.map
 .vitest
 coverage/
